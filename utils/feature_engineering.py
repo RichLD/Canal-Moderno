@@ -33,13 +33,10 @@ def _cols_a_str(base: pd.DataFrame) -> pd.DataFrame:
 
 
 def parsear_tiempo(base: pd.DataFrame) -> pd.DataFrame:
-    """Extrae AÑO, SEMANA y Fecha usando aritmética entera — evita problemas de Arrow strings."""
     base = base.copy()
-    # pd.to_numeric maneja int32, float, str, Arrow → siempre devuelve numpy int
     tiempo = pd.to_numeric(base['Tiempo'], errors='coerce').fillna(0).astype(int)
     base['AÑO'] = (tiempo // 100)
     base['SEMANA'] = (tiempo % 100)
-    # Eliminar filas con Tiempo=0 (NaN originales)
     base = base[base['AÑO'] > 0].copy()
     base['Fecha'] = pd.to_datetime(
         base['AÑO'].astype(str) + '-' + base['SEMANA'].astype(str) + '-1',
