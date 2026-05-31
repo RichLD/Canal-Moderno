@@ -32,12 +32,16 @@ def parsear_tiempo(base: pd.DataFrame) -> pd.DataFrame:
 
 
 def limpiar_base(base: pd.DataFrame) -> pd.DataFrame:
-    """Limpieza general: negativos en OH, columna MARCA con posible espacio."""
     base = base.copy()
 
-    # Normalizar nombre de columna MARCA (puede venir con espacio)
+    # Normalizar nombre de columna MARCA
     if 'MARCA ' in base.columns and 'MARCA' not in base.columns:
         base = base.rename(columns={'MARCA ': 'MARCA'})
+
+    # Convertir todas las columnas categóricas/Arrow a string nativo
+    cols_object = base.select_dtypes(include=['category', 'object']).columns
+    for col in cols_object:
+        base[col] = base[col].astype(str).replace('nan', '')
 
     # OH negativo → 0
     base['OH Piezas'] = np.where(base['OH Piezas'] < 0, 0, base['OH Piezas'])
