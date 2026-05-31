@@ -19,10 +19,10 @@ VENDEDORES_MAP = {
 def parsear_tiempo(base: pd.DataFrame) -> pd.DataFrame:
     """Extrae AÑO, SEMANA y Fecha a partir de la columna Tiempo (ej. 202510)."""
     base = base.copy()
-    # Convertir a int primero (por si viene como float o category)
-    tiempo = base['Tiempo'].astype(str).str.replace(r'\.0$', '', regex=True)
-    base['AÑO'] = tiempo.str[:4].astype(int)
-    base['SEMANA'] = tiempo.str[4:].astype(int)
+    # Convertir a int nativo — funciona con int32, float, Arrow strings
+    tiempo = pd.to_numeric(base['Tiempo'], errors='coerce').fillna(0).astype(int)
+    base['AÑO'] = (tiempo // 100)
+    base['SEMANA'] = (tiempo % 100)
     base['Fecha'] = pd.to_datetime(
         base['AÑO'].astype(str) + '-' + base['SEMANA'].astype(str) + '-1',
         format='%Y-%W-%w',
