@@ -69,7 +69,22 @@ st.markdown("""
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner='Cargando base de datos...')
 def cargar_datos() -> dict:
-    df_raw = pd.read_parquet('BASE/base_optimizada.parquet')
+    import pyarrow.parquet as pq
+    import pyarrow as pa
+    
+    # Leer con pyarrow y convertir a pandas con tipos numpy (no Arrow)
+    table = pq.read_table('BASE/base_optimizada.parquet')
+    
+    # Convertir columnas de diccionario/string a numpy object
+    new_columns = {}
+    for col in table.schema.names:
+        arr = table.column(col)
+        if pa.types.is_dictionary(arr.type) or pa.types.is_string(arr.type) or pa.types.is_large_string(arr.type):
+            new_columns[col] = arr.cast(pa.large_string()).to_pylist()
+        else:
+            new_columns[col] = arr.to_pylist()
+    
+    df_raw = pd.DataFrame(new_columns)
     df_raw.columns = df_raw.columns.str.strip()
     return procesar_completo(df_raw)
 
