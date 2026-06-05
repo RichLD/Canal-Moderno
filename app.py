@@ -95,18 +95,17 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner='Cargando datos...')
 def cargar_datos() -> dict:
-    table = pq.read_table('BASE/base_slim.parquet')
-    cols = {}
-    for col in table.schema.names:
-        arr = table.column(col)
-        if pa.types.is_dictionary(arr.type) or pa.types.is_string(arr.type) or pa.types.is_large_string(arr.type):
-            cols[col] = arr.cast(pa.large_string()).to_pylist()
-        else:
-            cols[col] = arr.to_pylist()
-    df_raw = pd.DataFrame(cols)
+    df_raw = pd.read_parquet(
+        'BASE/base_slim.parquet',
+        engine='pyarrow',
+    )
+    # Forzar tipos numpy para evitar Arrow en memoria
+    for col in df_raw.select_dtypes(include='object').columns:
+        df_raw[col] = df_raw[col].astype(str).replace('<NA>', '')
+    for col in df_raw.select_dtypes(include='category').columns:
+        df_raw[col] = df_raw[col].astype(str).replace('<NA>', '')
     df_raw.columns = df_raw.columns.str.strip()
     return procesar_completo(df_raw)
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SIDEBAR
