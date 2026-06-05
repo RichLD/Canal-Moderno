@@ -91,7 +91,7 @@ with st.sidebar:
 
     años_disp  = sorted(df_raw['_año'].unique().tolist(), reverse=True)
     años_disp  = [a for a in años_disp if a > 0]
-    años_sel   = st.multiselect('Año', años_disp, default=años_disp)
+    años_sel = st.multiselect('Año', años_disp, default=[años_disp[0]])
 
     cadenas_disp = sorted(df_raw['Cadena'].unique().tolist())
     cadenas_sel  = st.multiselect('Cadena', cadenas_disp, default=cadenas_disp)
