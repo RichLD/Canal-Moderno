@@ -64,16 +64,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 # CARGA CRUDA — solo lee el parquet, sin procesar
 # ─────────────────────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner='Cargando datos...')
+@st.cache_data(show_spinner='Cargando datos...')
 def cargar_raw() -> pd.DataFrame:
-    df = pd.read_parquet('BASE/base_slim.parquet', engine='pyarrow')
+    df = pd.read_parquet('BASE/base_final.parquet', engine='pyarrow')
     df.columns = df.columns.str.strip()
-    # Convertir tipos problemáticos a str nativo
     for col in df.select_dtypes(include='object').columns:
         df[col] = df[col].astype(str).replace('<NA>', '').replace('nan', '')
     for col in df.select_dtypes(include='category').columns:
         df[col] = df[col].astype(str).replace('<NA>', '').replace('nan', '')
-    # Tiempo como int para poder filtrar
-    df['_año'] = pd.to_numeric(df['Tiempo'], errors='coerce').fillna(0).astype(int) // 100
     return df
 
 
@@ -109,23 +107,25 @@ with st.sidebar:
 # ─────────────────────────────────────────────────────────────────────────────
 # FILTRAR PRIMERO — luego procesar solo el subconjunto
 # ─────────────────────────────────────────────────────────────────────────────
-@st.cache_data(show_spinner='Procesando...')
+@st.cache_data(show_spinner='Aplicando filtros...')
 def filtrar_y_procesar(años, cadenas, marcas, estados):
     mask = (
-        df_raw['_año'].isin(años) &
+        df_raw['AÑO'].isin(años) &
         df_raw['Cadena'].isin(cadenas) &
         df_raw['MARCA'].isin(marcas) &
         df_raw['Estado'].isin(estados)
     )
-    df_filtrado = df_raw[mask].drop(columns=['_año']).copy()
-    return procesar_completo(df_filtrado)
+    return df_raw[mask].copy()
 
 
 datos = filtrar_y_procesar(
     tuple(años_sel), tuple(cadenas_sel),
     tuple(marcas_sel), tuple(estados_sel)
 )
-base = datos['base']
+base = filtrar_y_procesar(
+    tuple(años_sel), tuple(cadenas_sel),
+    tuple(marcas_sel), tuple(estados_sel)
+)
 
 if base.empty:
     st.warning('⚠️ No hay datos con los filtros seleccionados.')
